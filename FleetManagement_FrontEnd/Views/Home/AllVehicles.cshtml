@@ -1,0 +1,238 @@
+﻿@model IEnumerable<Fleet_Management_System.Dto.VehicleLocationDto>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Vehicles</title>
+    <style>
+        body {
+            background-color: #f0f0f0; /* Light gray background */
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: left;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Styling for the table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #333;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        /* Styling for the search bar and button */
+        #search-container {
+            display: flex;
+            align-items: center;
+        }
+
+            #search-container input {
+                padding: 8px;
+                font-size: 14px;
+                margin-right: 10px;
+                width: 250px;
+            }
+
+            #search-container button {
+                padding: 8px 12px;
+                background-color: #333;
+                color: white;
+                border: none;
+                cursor: pointer;
+            }
+
+                #search-container button:hover {
+                    background-color: #555;
+                }
+
+        /* Modal styling */
+        #vehicle-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+            #vehicle-modal input {
+                margin: 10px 0;
+                padding: 8px;
+                width: 100%;
+            }
+
+            #vehicle-modal button {
+                padding: 8px 12px;
+                background-color: #333;
+                color: white;
+                border: none;
+                cursor: pointer;
+            }
+
+                #vehicle-modal button:hover {
+                    background-color: #555;
+                }
+    </style>
+</head>
+<body>
+
+    <!-- Header container with title and search bar -->
+    <div class="header-container">
+        <h1>All Vehicles Locations</h1>
+        <div id="search-container">
+            <input type="text" id="search-bar" placeholder="Search by Registration Number" onkeyup="filterVehicles()">
+            <button onclick="openModal()">Add Vehicle Location</button>
+        </div>
+    </div>
+
+    <!-- Vehicle Locations Table -->
+    <table id="vehicles-table">
+        <thead>
+            <tr>
+                <th>Vehicle ID</th>
+                <th>Registration Number</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var vehicle in Model)
+            {
+                <tr>
+                    <td>@vehicle.VehicleID</td>
+                    <td>@vehicle.VehicleRegistrationNumber</td>
+                    <td>@vehicle.Latitude</td>
+                    <td>@vehicle.Longitude</td>
+                    <td>@vehicle.Timestamp.ToString("g")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Modal for adding a new vehicle location -->
+    <div id="vehicle-modal">
+        <h3>Add Vehicle Location</h3>
+        <form id="vehicle-form">
+            <label for="registration-number">Registration Number</label>
+            <input type="text" id="registration-number" required>
+
+            <label for="latitude">Latitude</label>
+            <input type="number" id="latitude" required>
+
+            <label for="longitude">Longitude</label>
+            <input type="number" id="longitude" required>
+
+            <button type="submit">Save</button>
+            <button type="button" onclick="closeModal()">Cancel</button>
+        </form>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Filter the vehicles by Registration Number
+        function filterVehicles() {
+            const searchQuery = document.getElementById('search-bar').value.toLowerCase();
+            const rows = document.querySelectorAll('#vehicles-table tbody tr');
+
+            rows.forEach(row => {
+                const registrationNumber = row.cells[1].textContent.toLowerCase();
+                row.style.display = registrationNumber.includes(searchQuery) ? '' : 'none';
+            });
+        }
+
+        // Open the modal to add a new vehicle location
+        function openModal() {
+            document.getElementById('vehicle-modal').style.display = 'block';
+        }
+
+        // Close the modal
+        function closeModal() {
+            debugger
+            document.getElementById('vehicle-modal').style.display = 'none';
+        }
+
+        // Handle the form submission for adding a new vehicle location
+        document.getElementById('vehicle-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const registrationNumber = document.getElementById('registration-number').value;
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+
+            // Validate inputs
+            if (!registrationNumber || !latitude || !longitude) {
+                alert('All fields are required.');
+                return;
+            }
+
+            // Prepare data for the first POST request (controller method)
+            const vehicleData = {
+                Registration_Number: registrationNumber,
+                latitude: parseFloat(latitude),
+                longitude: parseFloat(longitude)
+            };
+
+            try {
+
+                // Make the second API call to the backend to add the vehicle location
+                const apiResponse = await fetch('https://localhost:44361/api/vehicles/location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(vehicleData)
+                });
+
+                if (!apiResponse.ok) {
+                    throw new Error('Failed to add vehicle location to the API');
+                }
+
+                // Close the modal after saving the data
+                closeModal();
+
+                // Optionally, you can refresh the table or fetch updated vehicle locations here
+                alert('Vehicle location added successfully!');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error adding vehicle location.');
+            }
+        });
+    </script>
+</body>
+</html>

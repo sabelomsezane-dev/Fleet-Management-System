@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Fleet Management</title>
+		<link rel="stylesheet" href="styles.css" />
+		<script
+			src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBABu5WcwCWDV-t6aULvZR64lGFPBgAl1E&callback=initMap"
+			async
+			defer></script>
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<h1>Fleet Management System</h1>
+			</header>
+			<div id="map-container"></div>
+			<div id="vehicle-details" class="modal">
+				<div class="modal-content">
+					<span class="close" id="close-btn">&times;</span>
+					<h2>Vehicle Details</h2>
+					<p id="vehicle-info"></p>
+				</div>
+			</div>
+		</div>
+		<script src="app.js"></script>
+	</body>
+</html>

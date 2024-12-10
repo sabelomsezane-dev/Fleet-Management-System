@@ -1,0 +1,217 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+
+    <!-- Google Maps API Script -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBABu5WcwCWDV-t6aULvZR64lGFPBgAl1E&callback=initMap" async defer></script>
+
+    <!-- Style -->
+    <style>
+        /* Global styles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Navigation bar styles */
+        #navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background-color: #333; /* Dark gray background */
+            color: white;
+            font-family: Arial, sans-serif;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+            #navbar .logo {
+                display: flex;
+                align-items: center;
+            }
+
+            #navbar img {
+                height: 40px;
+                margin-right: 10px;
+            }
+
+            #navbar h1 {
+                font-size: 1.5em;
+                margin: 0;
+            }
+
+            #navbar .buttons {
+                margin-right: 50px;
+                display: flex;
+                gap: 10px;
+            }
+
+            #navbar button {
+                padding: 10px 5px;
+                background-color: white;
+                color: #333; /* Match the navbar background */
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: bold;
+            }
+
+                #navbar button:hover {
+                    background-color: #555; /* Slightly lighter gray */
+                    color: white;
+                }
+
+        /* Map container styles */
+        #map-container {
+            height: 100%;
+            width: 100%;
+            margin-top: 60px; /* Offset for navbar height */
+        }
+
+        /* Modal styles */
+        #vehicle-details {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+        }
+
+            #vehicle-details h3 {
+                margin-top: 0;
+            }
+
+            #vehicle-details button {
+                margin-top: 10px;
+            }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <div id="navbar">
+        <div class="logo">
+            <h1>Fleet Management System</h1>
+        </div>
+        <div class="buttons">
+            <form action="/Home/AllVehicles" method="get">
+                <button type="submit" class="btn">View All Vehicles</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Google Map Container -->
+    <div id="map-container"></div>
+
+    <!-- Modal for Vehicle Details -->
+    <div id="vehicle-details">
+        <h3>Vehicle Details</h3>
+        <p><strong>Vehicle ID:</strong> <span id="vehicle-id"></span></p>
+        <p><strong>Registration Number:</strong> <span id="vehicle-registration-number"></span></p>
+        <p><strong>Latitude:</strong> <span id="vehicle-latitude"></span></p>
+        <p><strong>Longitude:</strong> <span id="vehicle-longitude"></span></p>
+        <p><strong>Timestamp:</strong> <span id="vehicle-timestamp"></span></p>
+        <button id="close-btn">Close</button>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        let map;
+        let markers = [];
+
+        // Initialize the Google Map
+        function initMap() {
+            console.log("Initializing map...");
+            map = new google.maps.Map(document.getElementById('map-container'), {
+                zoom: 5,
+                center: { lat: -25.7479, lng: 28.2293 },
+            });
+
+            // Fetch and display vehicle locations
+            fetchVehicleLocations();
+        }
+
+        // Fetch vehicle locations from the backend API
+        async function fetchVehicleLocations() {
+            try {
+                const response = await fetch('https://localhost:44361/api/vehicles/locations');  // Your backend endpoint
+                const data = await response.json();
+                displayVehicleMarkers(data);
+            } catch (error) {
+                console.error('Error fetching vehicle locations:', error);
+            }
+        }
+
+        // Display markers on the map for each vehicle
+        function displayVehicleMarkers(locations) {
+            locations.forEach(location => {
+                const position = { lat: location.latitude, lng: location.longitude };
+
+                // Create marker for each vehicle
+                const marker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: `Vehicle ID: ${location.vehicleRegistrationNumber}`,
+                    vehicleData: location  // Store the vehicle data with the marker
+                });
+
+                // Add marker to array
+                markers.push(marker);
+
+                // Add click event to show vehicle details in modal
+                marker.addListener('click', () => {
+                    showVehicleDetails(marker.vehicleData);
+                });
+            });
+        }
+
+        // Show vehicle details in the modal
+        function showVehicleDetails(vehicle) {
+            // Update modal with vehicle data
+            document.getElementById('vehicle-id').textContent = vehicle.vehicleID;
+            document.getElementById('vehicle-registration-number').textContent = vehicle.vehicleRegistrationNumber;
+            document.getElementById('vehicle-latitude').textContent = vehicle.latitude;
+            document.getElementById('vehicle-longitude').textContent = vehicle.longitude;
+            document.getElementById('vehicle-timestamp').textContent = new Date(vehicle.timestamp).toLocaleString();
+
+            // Show the modal
+            document.getElementById('vehicle-details').style.display = 'block';
+        }
+
+        // Close the modal
+        document.getElementById('close-btn').addEventListener('click', () => {
+            document.getElementById('vehicle-details').style.display = 'none';
+        });
+
+        // Placeholder functions for buttons
+        function viewAllVehicles() {
+            debugger
+            console.log("View All Vehicles Clicked")
+            window.location.href = '/AllVehicles.cshtml';
+        }
+
+        // Close the modal if clicked outside
+        window.addEventListener('click', (event) => {
+            if (event.target === document.getElementById('vehicle-details')) {
+                document.getElementById('vehicle-details').style.display = 'none';
+            }
+        });
+
+        // Call initMap() when Google Maps API is ready
+        window.initMap = initMap;
+    </script>
+</body>
+</html>
